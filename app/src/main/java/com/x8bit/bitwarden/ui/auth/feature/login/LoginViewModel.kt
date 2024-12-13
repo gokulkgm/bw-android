@@ -13,6 +13,7 @@ import com.x8bit.bitwarden.data.auth.repository.model.LoginResult
 import com.x8bit.bitwarden.data.auth.repository.util.CaptchaCallbackTokenResult
 import com.x8bit.bitwarden.data.auth.repository.util.generateUriForCaptcha
 import com.x8bit.bitwarden.data.platform.repository.EnvironmentRepository
+import com.x8bit.bitwarden.data.platform.repository.model.InMemoryLogManager
 import com.x8bit.bitwarden.data.vault.repository.VaultRepository
 import com.x8bit.bitwarden.ui.platform.base.BaseViewModel
 import com.x8bit.bitwarden.ui.platform.base.util.Text
@@ -39,6 +40,7 @@ class LoginViewModel @Inject constructor(
     environmentRepository: EnvironmentRepository,
     private val authRepository: AuthRepository,
     private val vaultRepository: VaultRepository,
+    private val inMemoryLogManager: InMemoryLogManager,
 ) : BaseViewModel<LoginState, LoginEvent, LoginAction>(
     // We load the state from the savedStateHandle for testing purposes.
     initialState = savedStateHandle[KEY_STATE]
@@ -207,6 +209,7 @@ class LoginViewModel @Inject constructor(
 
     private fun handleErrorDialogDismiss() {
         mutableStateFlow.update { it.copy(dialogState = null) }
+        inMemoryLogManager.publishLogs()
     }
 
     private fun handleCaptchaTokenReceived(tokenResult: CaptchaCallbackTokenResult) {

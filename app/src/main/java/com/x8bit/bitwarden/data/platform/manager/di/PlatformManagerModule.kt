@@ -60,6 +60,8 @@ import com.x8bit.bitwarden.data.platform.repository.DebugMenuRepository
 import com.x8bit.bitwarden.data.platform.repository.EnvironmentRepository
 import com.x8bit.bitwarden.data.platform.repository.ServerConfigRepository
 import com.x8bit.bitwarden.data.platform.repository.SettingsRepository
+import com.x8bit.bitwarden.data.platform.repository.model.InMemoryLogManager
+import com.x8bit.bitwarden.data.platform.repository.model.InMemoryLogManagerImpl
 import com.x8bit.bitwarden.data.vault.datasource.disk.VaultDiskSource
 import com.x8bit.bitwarden.data.vault.repository.VaultRepository
 import dagger.Module
@@ -247,9 +249,11 @@ object PlatformManagerModule {
     fun provideLogsManager(
         legacyAppCenterMigrator: LegacyAppCenterMigrator,
         settingsRepository: SettingsRepository,
+        inMemoryLogManager: InMemoryLogManager,
     ): LogsManager = LogsManagerImpl(
         settingsRepository = settingsRepository,
         legacyAppCenterMigrator = legacyAppCenterMigrator,
+        inMemoryLogManager = inMemoryLogManager,
     )
 
     @Provides
@@ -310,4 +314,8 @@ object PlatformManagerModule {
         authDiskSource = authDiskSource,
         settingsDiskSource = settingsDiskSource,
     )
+
+    @Provides
+    @Singleton
+    fun provideInMemoryLogManager(): InMemoryLogManager = InMemoryLogManagerImpl()
 }

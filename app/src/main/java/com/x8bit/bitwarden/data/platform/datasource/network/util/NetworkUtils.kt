@@ -4,6 +4,7 @@ import okio.ByteString.Companion.decodeBase64
 import java.net.UnknownHostException
 import java.nio.charset.Charset
 import java.security.cert.CertPathValidatorException
+import java.security.cert.CertificateException
 import java.util.Base64
 import javax.net.ssl.SSLHandshakeException
 
@@ -49,6 +50,19 @@ fun Throwable?.isNoConnectionError(): Boolean {
  */
 fun Throwable?.isSslHandShakeError(): Boolean {
     return this is SSLHandshakeException ||
+        this is CertificateException ||
         this is CertPathValidatorException ||
         this?.cause?.isSslHandShakeError() ?: false
+}
+
+fun Throwable?.getCertPathValidatorExceptionOrNull(): CertPathValidatorException? {
+    return this?.cause?.getCertPathValidatorExceptionOrNull()
+        ?: when (this) {
+            is CertPathValidatorException -> this
+            else -> null
+        }
+}
+
+fun CertPathValidatorException?.getCertificateChainListOrEmpty(): List<String> {
+    return this?.certPath?.certificates?.map { it.toString() } ?: emptyList()
 }

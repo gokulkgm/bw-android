@@ -1,5 +1,6 @@
 package com.x8bit.bitwarden
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
@@ -11,6 +12,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.LocaleListCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,6 +27,8 @@ import com.x8bit.bitwarden.ui.platform.composition.LocalManagerProvider
 import com.x8bit.bitwarden.ui.platform.feature.debugmenu.manager.DebugMenuLaunchManager
 import com.x8bit.bitwarden.ui.platform.feature.debugmenu.navigateToDebugMenuScreen
 import com.x8bit.bitwarden.ui.platform.feature.rootnav.RootNavScreen
+import com.x8bit.bitwarden.ui.platform.manager.intent.IntentManager
+import com.x8bit.bitwarden.ui.platform.manager.intent.IntentManagerImpl
 import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -76,6 +80,8 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val state by mainViewModel.stateFlow.collectAsStateWithLifecycle()
             val navController = rememberNavController()
+            val activity = LocalContext.current as Activity
+            val intentManager: IntentManager = IntentManagerImpl(activity)
             EventsEffect(viewModel = mainViewModel) { event ->
                 when (event) {
                     is MainEvent.CompleteAccessibilityAutofill -> {
@@ -94,10 +100,15 @@ class MainActivity : AppCompatActivity() {
                             )
                             .show()
                     }
+
+                    is MainEvent.ShareText -> intentManager.shareText(event.logText)
                 }
             }
             updateScreenCapture(isScreenCaptureAllowed = state.isScreenCaptureAllowed)
-            LocalManagerProvider {
+            LocalManagerProvider(
+                activity = activity,
+                intentManager = intentManager,
+            ) {
                 BitwardenTheme(theme = state.theme) {
                     RootNavScreen(
                         onSplashScreenRemoved = { shouldShowSplashScreen = false },

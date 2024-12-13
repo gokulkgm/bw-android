@@ -24,6 +24,7 @@ import com.x8bit.bitwarden.data.platform.manager.model.CompleteRegistrationData
 import com.x8bit.bitwarden.data.platform.manager.model.SpecialCircumstance
 import com.x8bit.bitwarden.data.platform.repository.EnvironmentRepository
 import com.x8bit.bitwarden.data.platform.repository.SettingsRepository
+import com.x8bit.bitwarden.data.platform.repository.model.InMemoryLogManager
 import com.x8bit.bitwarden.data.platform.util.isAddTotpLoginItemFromAuthenticator
 import com.x8bit.bitwarden.data.vault.manager.model.VaultStateEvent
 import com.x8bit.bitwarden.data.vault.repository.VaultRepository
@@ -72,6 +73,7 @@ class MainViewModel @Inject constructor(
     private val environmentRepository: EnvironmentRepository,
     private val savedStateHandle: SavedStateHandle,
     private val clock: Clock,
+    inMemoryLogManager: InMemoryLogManager,
 ) : BaseViewModel<MainState, MainEvent, MainAction>(
     initialState = MainState(
         theme = settingsRepository.appTheme,
@@ -161,6 +163,10 @@ class MainViewModel @Inject constructor(
                     settingsRepository.storeUserHasLoggedInValue(it.userId)
                 }
         }
+
+        inMemoryLogManager.publishedLogsFlow.onEach {
+            sendAction(MainAction.Internal.ShareLogText(it))
+        }.launchIn(viewModelScope)
     }
 
     override fun handleAction(action: MainAction) {
@@ -180,7 +186,12 @@ class MainViewModel @Inject constructor(
             is MainAction.ReceiveFirstIntent -> handleFirstIntentReceived(action)
             is MainAction.ReceiveNewIntent -> handleNewIntentReceived(action)
             MainAction.OpenDebugMenu -> handleOpenDebugMenu()
+            is MainAction.Internal.ShareLogText -> handleShareLogText(action)
         }
+    }
+
+    private fun handleShareLogText(action: MainAction.Internal.ShareLogText) {
+        sendEvent(MainEvent.ShareText(action.logText))
     }
 
     private fun handleOpenDebugMenu() {
@@ -485,6 +496,8 @@ sealed class MainAction {
          * Indicates a relevant change in the current vault lock state.
          */
         data object VaultUnlockStateChange : Internal()
+
+        data class ShareLogText(val logText: String) : Internal()
     }
 }
 
@@ -518,4 +531,7 @@ sealed class MainEvent {
      * Show a toast with the given [message].
      */
     data class ShowToast(val message: Text) : MainEvent()
+    data class ShareText(val logText: String) : MainEvent() {
+
+    }
 }
