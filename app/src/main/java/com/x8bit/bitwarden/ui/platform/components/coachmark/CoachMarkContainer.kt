@@ -65,16 +65,35 @@ fun <T : Enum<T>> CoachMarkContainer(
         .fillMaxSize()
         .then(modifier),
     ) {
+
+        Timber.i("Coach: I am the full container")
         CoachMarkScopeInstance(coachMarkState = state).content()
-        val boundedRectangle by state.currentHighlightBounds
         if (
-            boundedRectangle != Rect.Zero && state.isVisible.value
+            state.currentHighlightBounds.value != Rect.Zero && state.isVisible.value
         ) {
+
+            Timber.i("Coach do I get called? Im trying draw the overlay")
+            val boundedRectangle by state.currentHighlightBounds
             val highlightArea = Rect(
                 topLeft = boundedRectangle.topLeft,
                 bottomRight = boundedRectangle.bottomRight,
             )
+            val highlightPath = Path().apply {
+                Timber.i("Coach: I am applying the path for $highlightArea")
+                when (state.currentHighlightShape.value) {
+                    CoachMarkHighlightShape.SQUARE -> addRoundRect(
+                        RoundRect(
+                            rect = highlightArea,
+                            cornerRadius = CornerRadius(
+                                x = ROUNDED_RECT_RADIUS,
+                            ),
+                        ),
+                    )
 
+                    CoachMarkHighlightShape.OVAL -> addOval(highlightArea)
+                }
+            }
+            val backgroundColor = BitwardenTheme.colorScheme.text.primary
             Box(
                 modifier = Modifier
                     .pointerInput(Unit) {
@@ -82,7 +101,8 @@ fun <T : Enum<T>> CoachMarkContainer(
                             onTap = {
                                 if (state.isVisible.value) {
                                     scope.launch {
-                                        state.showCoachMark()
+                                        Timber.i("Coach calling it in gestures")
+                                        state.showToolTipForCurrentCoachMark()
                                     }
                                 }
                             },
@@ -91,26 +111,12 @@ fun <T : Enum<T>> CoachMarkContainer(
                     .fillMaxSize()
                     .drawBehind {
                         clipPath(
-                            path = Path().apply {
-                                Timber.i("Coach I am applying the path for $highlightArea")
-                                when (state.currentHighlightShape.value) {
-                                    CoachMarkHighlightShape.SQUARE -> addRoundRect(
-                                        RoundRect(
-                                            rect = highlightArea,
-                                            cornerRadius = CornerRadius(
-                                                x = ROUNDED_RECT_RADIUS,
-                                            ),
-                                        ),
-                                    )
-
-                                    CoachMarkHighlightShape.OVAL -> addOval(highlightArea)
-                                }
-                            },
+                            path = highlightPath,
                             clipOp = ClipOp.Difference,
                             block = {
                                 drawRect(
-                                    color = Color.Black,
-                                    alpha = 0.5f,
+                                    color = backgroundColor,
+                                    alpha = 0.75f,
                                 )
                             },
                         )
@@ -118,9 +124,16 @@ fun <T : Enum<T>> CoachMarkContainer(
             )
         }
     }
+    LaunchedEffect(state.currentHighlightBounds.value, state.currentHighlightShape.value) {
+        if (state.currentHighlightBounds.value != Rect.Zero) {
+            Timber.i("Coach: bounds changed do I get called? Im trying to show the tooltip")
+            state.showToolTipForCurrentCoachMark()
+        }
+    }
     LaunchedEffect(Unit) {
         if (state.isVisible.value && (state.currentHighlight.value != null)) {
-            state.showCoachMark()
+            Timber.i("Coach calling it in Launched effect cause state is visible")
+            state.showCoachMark(state.currentHighlight.value)
         }
     }
 }

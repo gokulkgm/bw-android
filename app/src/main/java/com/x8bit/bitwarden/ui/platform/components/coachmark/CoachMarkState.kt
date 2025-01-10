@@ -89,10 +89,10 @@ class CoachMarkState<T : Enum<T>>(
             }
             getCurrentHighlight()
         }
-        Timber.i("Coach: I have been requested to show the highlight for ${highlightToShow?.key} with bounds: ${highlightToShow?.highlightBounds}")
+        Timber.i("Coach: I have been requested to show the highlight for ${highlightToShow?.key} with bounds: ${currentHighlightBounds.value}")
         if (highlightToShow != null) {
+            updateCoachMarkStateInternal(highlightToShow)
             _isVisible.value = true
-            highlightToShow.toolTipState.show()
         } else {
             showNextCoachMark()
         }
@@ -105,6 +105,8 @@ class CoachMarkState<T : Enum<T>>(
      */
     suspend fun showNextCoachMark() {
         val highlightToShow = mutex.withLock {
+
+            Timber.i("Coach: I am trying to determine the next highlight")
             val previousHighlight = getCurrentHighlight()
             previousHighlight?.toolTipState?.cleanUp()
             val index = orderedList.indexOf(previousHighlight?.key)
@@ -115,7 +117,6 @@ class CoachMarkState<T : Enum<T>>(
         }
         Timber.i("Coach: I have been requested to show next highlight which is: ${highlightToShow?.key} with bounds: ${highlightToShow?.highlightBounds}")
         updateCoachMarkStateInternal(highlightToShow)
-        highlightToShow?.toolTipState?.show()
     }
 
     /**
@@ -138,7 +139,6 @@ class CoachMarkState<T : Enum<T>>(
             getCurrentHighlight()
         }
         updateCoachMarkStateInternal(highlightToShow)
-        highlightToShow?.toolTipState?.show()
     }
 
     /**
@@ -162,11 +162,22 @@ class CoachMarkState<T : Enum<T>>(
     }
 
     private fun updateCoachMarkStateInternal(highlight: CoachMarkHighlightState<T>?) {
+        Timber.i("Coach: I have updated the shape and bounds, the new bounds are ${highlight?.highlightBounds}")
         _currentHighlightShape.value = highlight?.shape ?: CoachMarkHighlightShape.SQUARE
         if (currentHighlightBounds.value != highlight?.highlightBounds) {
             _currentHighlightBounds.value = highlight?.highlightBounds ?: Rect.Zero
+            Timber.i("Coach: I have updated the bounds, the new bounds are ${highlight?.highlightBounds}")
         }
-        Timber.i("Coach: I have updated the shape and bounds, the new bounds are ${highlight?.highlightBounds}")
+    }
+
+    internal suspend fun showToolTipForCurrentCoachMark() {
+        Timber.i("Coach: I am trying to show")
+        val currentCoachMark = mutex.withLock {
+            getCurrentHighlight()
+        }
+
+        Timber.i("Coach: I am trying to show part 2")
+        currentCoachMark?.toolTipState?.show()
     }
 
     /**

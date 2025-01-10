@@ -260,7 +260,9 @@ fun VaultAddEditScreen(
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         delay(3000L)
-        coachMarkState.showCoachMark()
+        if (coachMarkState.isVisible.value.not()) {
+            coachMarkState.showCoachMark(AddEditItemCoachMark.GENERATE_PASSWORD)
+        }
     }
     CoachMarkContainer(
         state = coachMarkState,
