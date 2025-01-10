@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -29,6 +30,7 @@ import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenStandardIconButton
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
+import timber.log.Timber
 
 /**
  * Defines the scope for creating coach mark highlights within a user interface.
@@ -136,13 +138,20 @@ class CoachMarkScopeInstance<T : Enum<T>>(
             focusable = false,
             state = toolTipState,
             modifier = Modifier.onGloballyPositioned {
+                Timber.i("Coach: I get globally positioned for $key")
                 anchorBounds.value = it.boundsInRoot()
+            }.onPlaced {
+                if(anchorBounds.value == null) {
+                    Timber.i("Coach: I get placed for $key")
+                    anchorBounds.value = it.boundsInRoot()
+                }
             },
         ) {
             anchorContent()
         }
         LaunchedEffect(anchorBounds) {
             anchorBounds.value?.let {
+                Timber.i("Coach: I send the update for $key with bounds $it")
                 coachMarkState.updateHighlight(
                     key = key,
                     bounds = it,

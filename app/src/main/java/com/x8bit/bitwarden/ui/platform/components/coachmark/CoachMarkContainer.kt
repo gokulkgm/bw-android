@@ -36,6 +36,7 @@ import com.x8bit.bitwarden.ui.platform.components.text.BitwardenClickableText
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 private const val ROUNDED_RECT_RADIUS = 8f
 
@@ -91,6 +92,7 @@ fun <T : Enum<T>> CoachMarkContainer(
                     .drawBehind {
                         clipPath(
                             path = Path().apply {
+                                Timber.i("Coach I am applying the path for $highlightArea")
                                 when (state.currentHighlightShape.value) {
                                     CoachMarkHighlightShape.SQUARE -> addRoundRect(
                                         RoundRect(

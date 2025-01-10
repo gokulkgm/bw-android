@@ -11,6 +11,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.geometry.Rect
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import timber.log.Timber
 
 /**
  * Manages the state of a coach mark sequence, guiding users through a series of highlights.
@@ -60,7 +61,9 @@ class CoachMarkState<T : Enum<T>>(
         toolTipState: TooltipState,
         shape: CoachMarkHighlightShape = CoachMarkHighlightShape.SQUARE,
     ) {
+        Timber.i("Coach: I get the update for $key")
         mutex.withLock {
+            Timber.i("Coach: update the backing map for $key")
             highlights[key] = CoachMarkHighlightState(
                 key = key,
                 highlightBounds = bounds ?: Rect.Zero,
@@ -68,6 +71,7 @@ class CoachMarkState<T : Enum<T>>(
                 shape = shape,
             ).also {
                 if (key == currentHighlight.value) {
+                    Timber.i("Coach: The updated highlight is the current highlight = $key")
                     updateCoachMarkStateInternal(it)
                 }
             }
@@ -85,6 +89,7 @@ class CoachMarkState<T : Enum<T>>(
             }
             getCurrentHighlight()
         }
+        Timber.i("Coach: I have been requested to show the highlight for ${highlightToShow?.key} with bounds: ${highlightToShow?.highlightBounds}")
         if (highlightToShow != null) {
             _isVisible.value = true
             highlightToShow.toolTipState.show()
@@ -108,6 +113,7 @@ class CoachMarkState<T : Enum<T>>(
             _isVisible.value = currentHighlight.value != null
             getCurrentHighlight()
         }
+        Timber.i("Coach: I have been requested to show next highlight which is: ${highlightToShow?.key} with bounds: ${highlightToShow?.highlightBounds}")
         updateCoachMarkStateInternal(highlightToShow)
         highlightToShow?.toolTipState?.show()
     }
@@ -157,7 +163,10 @@ class CoachMarkState<T : Enum<T>>(
 
     private fun updateCoachMarkStateInternal(highlight: CoachMarkHighlightState<T>?) {
         _currentHighlightShape.value = highlight?.shape ?: CoachMarkHighlightShape.SQUARE
-        _currentHighlightBounds.value = highlight?.highlightBounds ?: Rect.Zero
+        if (currentHighlightBounds.value != highlight?.highlightBounds) {
+            _currentHighlightBounds.value = highlight?.highlightBounds ?: Rect.Zero
+        }
+        Timber.i("Coach: I have updated the shape and bounds, the new bounds are ${highlight?.highlightBounds}")
     }
 
     /**
