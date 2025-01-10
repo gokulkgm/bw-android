@@ -258,12 +258,6 @@ fun VaultAddEditScreen(
         orderedList = AddEditItemCoachMark.entries,
     )
     val coroutineScope = rememberCoroutineScope()
-    LaunchedEffect(Unit) {
-        delay(3000L)
-        if (coachMarkState.isVisible.value.not()) {
-            coachMarkState.showCoachMark(AddEditItemCoachMark.GENERATE_PASSWORD)
-        }
-    }
     CoachMarkContainer(
         state = coachMarkState,
     ) {
@@ -287,7 +281,9 @@ fun VaultAddEditScreen(
                         BitwardenTextButton(
                             label = stringResource(id = R.string.save),
                             onClick = remember(viewModel) {
-                                { viewModel.trySendAction(VaultAddEditAction.Common.SaveClick) }
+                                { coroutineScope.launch {
+                                    coachMarkState.showCoachMark()
+                                }}
                             },
                             modifier = Modifier.testTag("SaveButton"),
                         )

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
@@ -199,6 +200,7 @@ private fun TooltipScope.CoachMarkToolTip(
     rightAction: (@Composable RowScope.() -> Unit)?,
 ) {
     RichTooltip(
+        modifier = Modifier.padding(start = 8.dp, end = 2.dp),
         caretSize = DpSize(width = 24.dp, height = 16.dp),
         title = {
             Row(

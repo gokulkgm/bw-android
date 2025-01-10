@@ -1,5 +1,7 @@
 package com.x8bit.bitwarden.ui.platform.components.coachmark
 
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TooltipState
 import androidx.compose.runtime.Composable
@@ -9,9 +11,12 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Manages the state of a coach mark sequence, guiding users through a series of highlights.
@@ -92,7 +97,6 @@ class CoachMarkState<T : Enum<T>>(
         Timber.i("Coach: I have been requested to show the highlight for ${highlightToShow?.key} with bounds: ${currentHighlightBounds.value}")
         if (highlightToShow != null) {
             updateCoachMarkStateInternal(highlightToShow)
-            _isVisible.value = true
         } else {
             showNextCoachMark()
         }
@@ -112,7 +116,6 @@ class CoachMarkState<T : Enum<T>>(
             val index = orderedList.indexOf(previousHighlight?.key)
             if (index < 0 && previousHighlight != null) return
             _currentHighlight.value = orderedList.getOrNull(index + 1)
-            _isVisible.value = currentHighlight.value != null
             getCurrentHighlight()
         }
         Timber.i("Coach: I have been requested to show next highlight which is: ${highlightToShow?.key} with bounds: ${highlightToShow?.highlightBounds}")
@@ -135,7 +138,6 @@ class CoachMarkState<T : Enum<T>>(
                 return
             }
             _currentHighlight.value = orderedList.getOrNull(index - 1)
-            _isVisible.value = this.currentHighlight.value != null
             getCurrentHighlight()
         }
         updateCoachMarkStateInternal(highlightToShow)
@@ -162,6 +164,7 @@ class CoachMarkState<T : Enum<T>>(
     }
 
     private fun updateCoachMarkStateInternal(highlight: CoachMarkHighlightState<T>?) {
+        _isVisible.value = highlight != null
         Timber.i("Coach: I have updated the shape and bounds, the new bounds are ${highlight?.highlightBounds}")
         _currentHighlightShape.value = highlight?.shape ?: CoachMarkHighlightShape.SQUARE
         if (currentHighlightBounds.value != highlight?.highlightBounds) {
@@ -170,7 +173,7 @@ class CoachMarkState<T : Enum<T>>(
         }
     }
 
-    internal suspend fun showToolTipForCurrentCoachMark() {
+    suspend fun showToolTipForCurrentCoachMark() {
         Timber.i("Coach: I am trying to show")
         val currentCoachMark = mutex.withLock {
             getCurrentHighlight()
@@ -178,6 +181,29 @@ class CoachMarkState<T : Enum<T>>(
 
         Timber.i("Coach: I am trying to show part 2")
         currentCoachMark?.toolTipState?.show()
+    }
+
+    suspend fun scrollUpToKey(
+        listState: LazyListState,
+        targetKey: T,
+    ) {
+        val scrollAmount = (-1).toFloat()
+        var found = false
+        while (!found) {
+            val layoutInfo = listState.layoutInfo
+            val visibleItems = layoutInfo.visibleItemsInfo
+            if (visibleItems.any { it.key == targetKey }) {
+                found = true
+            } else {
+                if (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0) {
+                    // Reached the start of the list without finding the key
+                    println("Key $targetKey not found")
+                    found = true
+                } else {
+                    listState.scrollBy(scrollAmount)
+                }
+            }
+        }
     }
 
     /**

@@ -11,20 +11,26 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
@@ -35,6 +41,7 @@ import com.x8bit.bitwarden.ui.platform.components.button.BitwardenStandardIconBu
 import com.x8bit.bitwarden.ui.platform.components.text.BitwardenClickableText
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -61,55 +68,68 @@ fun <T : Enum<T>> CoachMarkContainer(
     content: @Composable CoachMarkScope<T>.() -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .then(modifier),
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .then(modifier),
     ) {
 
         Timber.i("Coach: I am the full container")
         CoachMarkScopeInstance(coachMarkState = state).content()
-        if (
-            state.currentHighlightBounds.value != Rect.Zero && state.isVisible.value
-        ) {
+        val boundedRectangle by state.currentHighlightBounds
+        val isVisible by state.isVisible
+        val currentHighlightShape by state.currentHighlightShape
 
-            Timber.i("Coach do I get called? Im trying draw the overlay")
-            val boundedRectangle by state.currentHighlightBounds
-            val highlightArea = Rect(
-                topLeft = boundedRectangle.topLeft,
-                bottomRight = boundedRectangle.bottomRight,
-            )
-            val highlightPath = Path().apply {
+        val highlightPath =
+            remember(boundedRectangle, currentHighlightShape) {
+                if (boundedRectangle == Rect.Zero) {
+                    Timber.w("Coach: highlightPath is Rect.Zero")
+                    return@remember Path()
+                }
+                val highlightArea = Rect(
+                    topLeft = boundedRectangle.topLeft,
+                    bottomRight = boundedRectangle.bottomRight,
+                )
                 Timber.i("Coach: I am applying the path for $highlightArea")
-                when (state.currentHighlightShape.value) {
-                    CoachMarkHighlightShape.SQUARE -> addRoundRect(
-                        RoundRect(
-                            rect = highlightArea,
-                            cornerRadius = CornerRadius(
-                                x = ROUNDED_RECT_RADIUS,
+                Path().apply {
+                    when (currentHighlightShape) {
+                        CoachMarkHighlightShape.SQUARE -> addRoundRect(
+                            RoundRect(
+                                rect = highlightArea,
+                                cornerRadius = CornerRadius(
+                                    x = ROUNDED_RECT_RADIUS,
+                                ),
                             ),
-                        ),
-                    )
+                        )
 
-                    CoachMarkHighlightShape.OVAL -> addOval(highlightArea)
+                        CoachMarkHighlightShape.OVAL -> addOval(highlightArea)
+                    }
                 }
             }
+        if (boundedRectangle != Rect.Zero && isVisible) {
+            Timber.i("Coach do I get called? Im trying draw the overlay")
             val backgroundColor = BitwardenTheme.colorScheme.text.primary
             Box(
                 modifier = Modifier
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onTap = {
-                                if (state.isVisible.value) {
-                                    scope.launch {
-                                        Timber.i("Coach calling it in gestures")
-                                        state.showToolTipForCurrentCoachMark()
-                                    }
+                                scope.launch {
+                                    Timber.i("Coach calling it in gestures")
+                                    state.showToolTipForCurrentCoachMark()
                                 }
                             },
                         )
                     }
                     .fillMaxSize()
+//                    .background(
+//                        color = backgroundColor.copy(alpha = .75f)
+//                    )
+//                    .clip(
+//                        CircleShape
+//                    )
                     .drawBehind {
+                        Timber.i("Coach: in drawbehind, $highlightPath based on $boundedRectangle")
                         clipPath(
                             path = highlightPath,
                             clipOp = ClipOp.Difference,
@@ -123,17 +143,17 @@ fun <T : Enum<T>> CoachMarkContainer(
                     },
             )
         }
-    }
-    LaunchedEffect(state.currentHighlightBounds.value, state.currentHighlightShape.value) {
-        if (state.currentHighlightBounds.value != Rect.Zero) {
-            Timber.i("Coach: bounds changed do I get called? Im trying to show the tooltip")
-            state.showToolTipForCurrentCoachMark()
+        LaunchedEffect(state.currentHighlightBounds.value, state.currentHighlightShape.value) {
+            if (state.currentHighlightBounds.value != Rect.Zero) {
+                Timber.i("Coach: bounds changed do I get called? Im trying to show the tooltip")
+                state.showToolTipForCurrentCoachMark()
+            }
         }
-    }
-    LaunchedEffect(Unit) {
-        if (state.isVisible.value && (state.currentHighlight.value != null)) {
-            Timber.i("Coach calling it in Launched effect cause state is visible")
-            state.showCoachMark(state.currentHighlight.value)
+        LaunchedEffect(Unit) {
+            if (state.isVisible.value && (state.currentHighlight.value != null)) {
+                Timber.i("Coach calling it in Launched effect cause state is visible")
+                state.showCoachMark(state.currentHighlight.value)
+            }
         }
     }
 }
