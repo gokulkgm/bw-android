@@ -48,8 +48,9 @@ class Fido2CredentialManagerImpl(
         fido2CreateCredentialRequest: Fido2CreateCredentialRequest,
         selectedCipherView: CipherView,
     ): Fido2RegisterCredentialResult {
-        val requestedFromBrowser = fido2CreateCredentialRequest.callingAppInfo.isOriginPopulated()
-        val clientData = if (requestedFromBrowser) {
+        val isRequestFromPrivilegedApp =
+            fido2CreateCredentialRequest.callingAppInfo.isOriginPopulated()
+        val clientData = if (isRequestFromPrivilegedApp) {
             fido2CreateCredentialRequest
                 .callingAppInfo
                 .getAppSigningSignatureFingerprint()
@@ -62,28 +63,12 @@ class Fido2CredentialManagerImpl(
                     .packageName,
             )
         }
-        val requestJsonOrigin = fido2CreateCredentialRequest
+        val assetLinkUrl = fido2CreateCredentialRequest
             .origin
             ?: getOriginUrlFromAttestationOptionsOrNull(fido2CreateCredentialRequest.requestJson)
             ?: return Fido2RegisterCredentialResult.Error
-//        val relyingPartyId = json
-//            .decodeFromStringOrNull<PasskeyAssertionOptions>(fido2CreateCredentialRequest.requestJson)
-//            ?.relyingPartyId
-//            ?: return Fido2RegisterCredentialResult.Error
-//
-//        val validateOriginResult = validateOrigin(
-//            callingAppInfo = fido2CreateCredentialRequest.callingAppInfo,
-//            relyingPartyId = relyingPartyId,
-//        )
-//
-//        if(validateOriginResult is Fido2ValidateOriginResult.Error)
-//        {
-//            return Fido2RegisterCredentialResult.Error
-//        }
 
-        val origin = if (requestedFromBrowser) {
-            Origin.Web(requestJsonOrigin)
-        } else {
+        val origin = if (!isRequestFromPrivilegedApp) {
             Origin.Android(
                 UnverifiedAssetLink(
                     packageName = fido2CreateCredentialRequest.packageName,
@@ -91,12 +76,14 @@ class Fido2CredentialManagerImpl(
                         .callingAppInfo
                         .getSignatureFingerprintAsHexString()
                         ?: return Fido2RegisterCredentialResult.Error,
-                    host = requestJsonOrigin,
-                    assetLinkUrl = null // will be generated
+                    host = assetLinkUrl.toHostOrPathOrNull()
+                        ?: return Fido2RegisterCredentialResult.Error,
+                    assetLinkUrl = assetLinkUrl,
                 ),
             )
+        } else {
+            Origin.Web(assetLinkUrl)
         }
-
         return vaultSdkSource
             .registerFido2Credential(
                 request = RegisterFido2CredentialRequest(
