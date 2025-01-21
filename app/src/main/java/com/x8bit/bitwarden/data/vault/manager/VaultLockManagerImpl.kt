@@ -50,6 +50,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -254,6 +255,7 @@ class VaultLockManagerImpl(
         if (!wasVaultUnlocked) {
             mutableVaultStateEventSharedFlow.tryEmit(VaultStateEvent.Unlocked(userId = userId))
         }
+        Timber.e("Vault Unlocked -- $userId")
     }
 
     private fun setVaultToLocked(userId: String) {
@@ -269,12 +271,14 @@ class VaultLockManagerImpl(
         if (!wasVaultLocked) {
             mutableVaultStateEventSharedFlow.tryEmit(VaultStateEvent.Locked(userId = userId))
         }
+        Timber.e("Vault Locked -- $userId")
     }
 
     private fun setVaultToUnlocking(userId: String) {
         mutableVaultUnlockDataStateFlow.update {
             it.update(userId, VaultUnlockData.Status.UNLOCKING)
         }
+        Timber.e("Vault Unlocking -- $userId")
     }
 
     private fun setVaultToNotUnlocking(userId: String) {
@@ -283,6 +287,7 @@ class VaultLockManagerImpl(
         mutableVaultUnlockDataStateFlow.update {
             it.update(userId, null)
         }
+        Timber.e("Vault Not Unlocking -- $userId")
     }
 
     private fun storeUserAutoUnlockKeyIfNecessary(userId: String) {
@@ -363,6 +368,7 @@ class VaultLockManagerImpl(
 
     private fun handleOnForeground() {
         val userId = activeUserId ?: return
+        Timber.e("Canceling Timeout Delay -- $userId")
         userIdTimerJobMap[userId]?.cancel()
     }
 
@@ -460,6 +466,7 @@ class VaultLockManagerImpl(
     ) {
         // Make sure to clear the now-active user's timeout job.
         userIdTimerJobMap[currentActiveUserId]?.cancel()
+        Timber.e("Canceling Timeout Delay -- $currentActiveUserId")
         // Check if the user's timeout action should be performed as we switch away.
         checkForVaultTimeout(
             userId = previousActiveUserId,
@@ -551,6 +558,7 @@ class VaultLockManagerImpl(
         vaultTimeoutAction: VaultTimeoutAction,
         delayInMs: Long,
     ) {
+        Timber.e("Setup Timeout Delay ($delayInMs) $vaultTimeoutAction -- $userId")
         userIdTimerJobMap[userId]?.cancel()
         userIdTimerJobMap[userId] = unconfinedScope.launch {
             delay(timeMillis = delayInMs)
@@ -568,6 +576,7 @@ class VaultLockManagerImpl(
     ) {
         when (vaultTimeoutAction) {
             VaultTimeoutAction.LOCK -> {
+                Timber.e("Locking for timeout -- $userId")
                 setVaultToLocked(userId = userId)
             }
 
