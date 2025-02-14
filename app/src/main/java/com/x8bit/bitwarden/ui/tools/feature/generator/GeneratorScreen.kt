@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -639,7 +640,7 @@ private fun CoachMarkScope<ExploreGeneratorCoachMark>.MainStateOptionsItem(
         modifier = modifier
             .fillMaxWidth()
             .testTag(tag = "GeneratorTypePicker"),
-    ) { index, option ->
+    ) { index, weightedWidth, option ->
         when (index) {
             0 -> {
                 CoachMarkHighlight(
@@ -658,7 +659,10 @@ private fun CoachMarkScope<ExploreGeneratorCoachMark>.MainStateOptionsItem(
                     shape = CoachMarkHighlightShape.RoundedRectangle(radius = 50f),
                     leftAction = null,
                 ) {
-                    SegmentedButtonOptionContent(option = option)
+                    SegmentedButtonOptionContent(
+                        option = option,
+                        modifier = Modifier.width(weightedWidth),
+                    )
                 }
             }
 
@@ -684,7 +688,10 @@ private fun CoachMarkScope<ExploreGeneratorCoachMark>.MainStateOptionsItem(
                     },
                     shape = CoachMarkHighlightShape.RoundedRectangle(radius = 50f),
                 ) {
-                    SegmentedButtonOptionContent(option = option)
+                    SegmentedButtonOptionContent(
+                        option = option,
+                        modifier = Modifier.width(weightedWidth),
+                    )
                 }
             }
 
@@ -710,12 +717,18 @@ private fun CoachMarkScope<ExploreGeneratorCoachMark>.MainStateOptionsItem(
                     },
                     shape = CoachMarkHighlightShape.RoundedRectangle(radius = 50f),
                 ) {
-                    SegmentedButtonOptionContent(option = option)
+                    SegmentedButtonOptionContent(
+                        option = option,
+                        modifier = Modifier.width(weightedWidth),
+                    )
                 }
             }
 
             else -> {
-                SegmentedButtonOptionContent(option = option)
+                SegmentedButtonOptionContent(
+                    option = option,
+                    modifier = Modifier.width(weightedWidth),
+                )
             }
         }
     }
@@ -1194,7 +1207,7 @@ private fun ForwardedEmailAliasTypeContent(
                     value = usernameTypeState.selectedServiceType.apiAccessToken,
                     onValueChange = forwardedEmailAliasHandlers.onAddyIoAccessTokenTextChange,
                     showPasswordTestTag = "ShowForwardedEmailApiSecretButton",
-                    textFieldTestTag = "ForwardedEmailApiSecretEntry",
+                    passwordFieldTestTag = "ForwardedEmailApiSecretEntry",
                     cardStyle = CardStyle.Full,
                     modifier = Modifier
                         .standardHorizontalMargin()
@@ -1221,7 +1234,7 @@ private fun ForwardedEmailAliasTypeContent(
                     value = usernameTypeState.selectedServiceType.apiKey,
                     onValueChange = forwardedEmailAliasHandlers.onDuckDuckGoApiKeyTextChange,
                     showPasswordTestTag = "ShowForwardedEmailApiSecretButton",
-                    textFieldTestTag = "ForwardedEmailApiSecretEntry",
+                    passwordFieldTestTag = "ForwardedEmailApiSecretEntry",
                     cardStyle = CardStyle.Full,
                     modifier = Modifier
                         .standardHorizontalMargin()
@@ -1235,7 +1248,7 @@ private fun ForwardedEmailAliasTypeContent(
                     value = usernameTypeState.selectedServiceType.apiKey,
                     onValueChange = forwardedEmailAliasHandlers.onFastMailApiKeyTextChange,
                     showPasswordTestTag = "ShowForwardedEmailApiSecretButton",
-                    textFieldTestTag = "ForwardedEmailApiSecretEntry",
+                    passwordFieldTestTag = "ForwardedEmailApiSecretEntry",
                     cardStyle = CardStyle.Full,
                     modifier = Modifier
                         .standardHorizontalMargin()
@@ -1249,7 +1262,7 @@ private fun ForwardedEmailAliasTypeContent(
                     value = usernameTypeState.selectedServiceType.apiAccessToken,
                     onValueChange = forwardedEmailAliasHandlers.onFirefoxRelayAccessTokenTextChange,
                     showPasswordTestTag = "ShowForwardedEmailApiSecretButton",
-                    textFieldTestTag = "ForwardedEmailApiSecretEntry",
+                    passwordFieldTestTag = "ForwardedEmailApiSecretEntry",
                     cardStyle = CardStyle.Full,
                     modifier = Modifier
                         .standardHorizontalMargin()
@@ -1263,7 +1276,7 @@ private fun ForwardedEmailAliasTypeContent(
                     value = usernameTypeState.selectedServiceType.apiKey,
                     onValueChange = forwardedEmailAliasHandlers.onForwardEmailApiKeyTextChange,
                     showPasswordTestTag = "ShowForwardedEmailApiSecretButton",
-                    textFieldTestTag = "ForwardedEmailApiSecretEntry",
+                    passwordFieldTestTag = "ForwardedEmailApiSecretEntry",
                     cardStyle = CardStyle.Full,
                     modifier = Modifier
                         .standardHorizontalMargin()
@@ -1290,7 +1303,7 @@ private fun ForwardedEmailAliasTypeContent(
                     value = usernameTypeState.selectedServiceType.apiKey,
                     onValueChange = forwardedEmailAliasHandlers.onSimpleLoginApiKeyTextChange,
                     showPasswordTestTag = "ShowForwardedEmailApiSecretButton",
-                    textFieldTestTag = "ForwardedEmailApiSecretEntry",
+                    passwordFieldTestTag = "ForwardedEmailApiSecretEntry",
                     cardStyle = CardStyle.Full,
                     modifier = Modifier
                         .standardHorizontalMargin()
@@ -1305,7 +1318,7 @@ private fun ForwardedEmailAliasTypeContent(
                     value = obfuscatedTextField,
                     onValueChange = { obfuscatedTextField = it },
                     showPasswordTestTag = "ShowForwardedEmailApiSecretButton",
-                    textFieldTestTag = "ForwardedEmailApiSecretEntry",
+                    passwordFieldTestTag = "ForwardedEmailApiSecretEntry",
                     cardStyle = CardStyle.Full,
                     modifier = Modifier
                         .standardHorizontalMargin()

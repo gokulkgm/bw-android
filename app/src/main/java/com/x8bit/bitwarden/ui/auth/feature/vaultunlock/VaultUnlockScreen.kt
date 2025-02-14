@@ -118,15 +118,15 @@ fun VaultUnlockScreen(
                 )
             }
 
-            VaultUnlockEvent.Fido2CredentialAssertionError -> {
+            is VaultUnlockEvent.Fido2CredentialAssertionError -> {
                 fido2CompletionManager.completeFido2Assertion(
-                    result = Fido2CredentialAssertionResult.Error,
+                    result = Fido2CredentialAssertionResult.Error(event.message),
                 )
             }
 
-            VaultUnlockEvent.Fido2GetCredentialsError -> {
+            is VaultUnlockEvent.Fido2GetCredentialsError -> {
                 fido2CompletionManager.completeFido2GetCredentialRequest(
-                    result = Fido2GetCredentialsResult.Error,
+                    result = Fido2GetCredentialsResult.Error(message = event.message),
                 )
             }
         }
@@ -269,7 +269,7 @@ fun VaultUnlockScreen(
                         },
                     ),
                     supportingText = state.vaultUnlockType.unlockScreenMessage(),
-                    textFieldTestTag = state.vaultUnlockType.unlockScreenInputTestTag,
+                    passwordFieldTestTag = state.vaultUnlockType.unlockScreenInputTestTag,
                     cardStyle = CardStyle.Top(hasDivider = false),
                     modifier = Modifier
                         .standardHorizontalMargin()

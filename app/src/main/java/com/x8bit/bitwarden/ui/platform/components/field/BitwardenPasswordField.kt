@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.res.stringResource
@@ -123,6 +124,7 @@ fun BitwardenPasswordField(
             onValueChange = onValueChange,
             defaultTextToolbar = LocalTextToolbar.current,
             clipboardManager = LocalClipboardManager.current.nativeClipboard,
+            focusManager = LocalFocusManager.current,
         )
 
         TextToolbarType.NONE -> BitwardenEmptyTextToolbar
@@ -396,7 +398,7 @@ fun BitwardenPasswordField(
  * the password field.
  * @param imeAction the preferred IME action for the keyboard to have.
  * @param keyboardActions the callbacks of keyboard actions.
- * @param textFieldTestTag The optional test tag associated with the inner text field.
+ * @param passwordFieldTestTag The optional test tag associated with the inner text field.
  * @param cardStyle Indicates the type of card style to be applied.
  * @param actionsPadding Padding to be applied to the [actions] block.
  * @param actions A lambda containing the set of actions (usually icons or similar) to display
@@ -419,7 +421,7 @@ fun BitwardenPasswordField(
     keyboardType: KeyboardType = KeyboardType.Password,
     imeAction: ImeAction = ImeAction.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
-    textFieldTestTag: String? = null,
+    passwordFieldTestTag: String? = null,
     actionsPadding: PaddingValues = PaddingValues(end = 4.dp),
     actions: @Composable (RowScope.() -> Unit)? = null,
 ) {
@@ -439,7 +441,7 @@ fun BitwardenPasswordField(
         keyboardType = keyboardType,
         imeAction = imeAction,
         keyboardActions = keyboardActions,
-        passwordFieldTestTag = textFieldTestTag,
+        passwordFieldTestTag = passwordFieldTestTag,
         cardStyle = cardStyle,
         actionsPadding = actionsPadding,
         actions = actions,
