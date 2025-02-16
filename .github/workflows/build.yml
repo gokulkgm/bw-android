@@ -37,43 +37,141 @@ jobs:
 
     steps:
       - name: Check out repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      # ... (previous steps remain the same up to the build step)
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@0bdd871935719febd78681f197cd39af5b6e16a6 # v4.2.2
 
-      - name: Build
-        run: bundle exec fastlane assembleDebugApks
+      - name: Cache Gradle files
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-v2-
 
-      # Add step to debug directory structure (optional)
-      - name: List build outputs
-        run: find app/build/outputs/apk -name "*.apk"
+      - name: Cache build output
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        with:
+          path: |
+            ${{ github.workspace }}/build-cache
+          key: ${{ runner.os }}-build-cache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-
 
-      # Updated upload steps with wildcards
-      - name: Upload release APK
+      - name: Configure JDK
+        uses: actions/setup-java@7a6d8a8234af8eb26422e24e3006232cccaa061b # v4.6.0
+        with:
+          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Configure Ruby
+        uses: ruby/setup-ruby@28c4deda893d5a96a6b2d958c5b47fc18d65c9d3 # v1.213.0
+        with:
+          bundler-cache: true
+
+      - name: Install Fastlane
+        run: |
+          gem install bundler:2.2.27
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+
+      - name: Check
+        run: bundle exec fastlane check
+
+      - name: Build APKs
+        run: |
+          bundle exec fastlane build_all_unsigned
+          echo "Listing build outputs directory:"
+          find app/build/outputs/apk -name "*.apk" -type f
+
+      - name: Upload test reports on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports
+          path: app/build/reports/tests/
+
+      # Standard flavor artifacts
+      - name: Upload Standard Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: app/build/outputs/apk/**/release/*.apk
+          name: standard-release-apk
+          path: app/build/outputs/apk/standard/release/app-standard-release-unsigned.apk
 
-      - name: Upload beta APK
+      - name: Upload Standard Beta APK
         uses: actions/upload-artifact@v4
         with:
-          name: beta-apk
-          path: app/build/outputs/apk/**/beta/*.apk
+          name: standard-beta-apk
+          path: app/build/outputs/apk/standard/beta/app-standard-beta-unsigned.apk
 
-      - name: Upload debug APK
+      - name: Upload Standard Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: debug-apk
-          path: app/build/outputs/apk/**/debug/*.apk
+          name: standard-debug-apk
+          path: app/build/outputs/apk/standard/debug/app-standard-debug.apk
 
-      # Updated checksum creation with wildcards
+      # F-Droid flavor artifacts
+      - name: Upload F-Droid Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-release-apk
+          path: app/build/outputs/apk/fdroid/release/app-fdroid-release-unsigned.apk
+
+      - name: Upload F-Droid Beta APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-beta-apk
+          path: app/build/outputs/apk/fdroid/beta/app-fdroid-beta-unsigned.apk
+
+      - name: Upload F-Droid Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-debug-apk
+          path: app/build/outputs/apk/fdroid/debug/app-fdroid-debug.apk
+
+      # Create checksums for all APKs
       - name: Create checksums
         run: |
-          find app/build/outputs/apk -name "*.apk" -exec sha256sum {} > {}.sha256 \;
+          cd app/build/outputs/apk
+          find . -name "*.apk" -type f -exec sh -c 'sha256sum "$1" > "$1.sha256"' sh {} \;
 
-      - name: Upload checksums
+      # Standard flavor checksums
+      - name: Upload Standard Release APK checksum
         uses: actions/upload-artifact@v4
         with:
-          name: apk-checksums
-          path: app/build/outputs/apk/**/*.sha256
+          name: standard-release-apk-checksum
+          path: app/build/outputs/apk/standard/release/app-standard-release-unsigned.apk.sha256
+
+      - name: Upload Standard Beta APK checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: standard-beta-apk-checksum
+          path: app/build/outputs/apk/standard/beta/app-standard-beta-unsigned.apk.sha256
+
+      - name: Upload Standard Debug APK checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: standard-debug-apk-checksum
+          path: app/build/outputs/apk/standard/debug/app-standard-debug.apk.sha256
+
+      # F-Droid flavor checksums
+      - name: Upload F-Droid Release APK checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-release-apk-checksum
+          path: app/build/outputs/apk/fdroid/release/app-fdroid-release-unsigned.apk.sha256
+
+      - name: Upload F-Droid Beta APK checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-beta-apk-checksum
+          path: app/build/outputs/apk/fdroid/beta/app-fdroid-beta-unsigned.apk.sha256
+
+      - name: Upload F-Droid Debug APK checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-debug-apk-checksum
+          path: app/build/outputs/apk/fdroid/debug/app-fdroid-debug.apk.sha256
