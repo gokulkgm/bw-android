@@ -408,3 +408,13 @@ private fun renameFile(path: String, newName: String) {
         throw RuntimeException("Failed to rename $originalFile to $newFile")
     }
 }
+
+private fun copyApkToOutputDir(variantName: String, outputFileName: String) {
+    val outputDir = File("app/build/outputs/apk/$variantName")
+    if (!outputDir.exists()) {
+        outputDir.mkdirs()
+    }
+    val apkFile = File("app/build/outputs/apk/$outputFileName")
+    val destinationFile = File(outputDir, outputFileName)
+    apkFile.copyTo(destinationFile, overwrite = true)
+}
